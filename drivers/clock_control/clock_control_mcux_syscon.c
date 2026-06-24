@@ -120,6 +120,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_MCUX_EQDC)
+	if ((uint32_t)sub_system == MCUX_EQDC_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateQDC0);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -407,6 +413,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_MCUX_EQDC)
+	if ((uint32_t)sub_system == MCUX_EQDC_CLK) {
+		CLOCK_DisableClock(kCLOCK_GateQDC0);
+	}
+#endif
 	return 0;
 }
 
@@ -906,6 +917,13 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
 	case MCUX_SLCD_CLK:
 		*rate = 16384U; /* Fix 16.384kHz */
+		break;
+#endif
+
+#if defined(CONFIG_MCUX_EQDC)
+	case MCUX_EQDC_CLK:
+		/* EQDC is clocked from the AHB/bus clock on MCXA */
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
 #endif
 	}
