@@ -21,6 +21,11 @@ properties:
       This is a number that is used to determine how many revolutions
       were done based on the current counter's value.
 
+  inputmux:
+    type: phandle
+    description: |
+      Phandle to the INPUTMUX node used to route signals to this QDC instance.
+
   single-phase-mode:
     type: boolean
     description: |
@@ -47,5 +52,8 @@ properties:
     description: InputMUX channels for Phase A and Phase B
 
   inputmux-connections:
-    type: array
-    description: InputMUX connection IDs for Phase A and Phase B
+    type: phandle-array
+    specifier-space: inputmux
+    description: |
+      Array of inputmux connections routing the trigger inputs to the QDC.
+      Format is: <&inputmux_node channel routing_hex_value>

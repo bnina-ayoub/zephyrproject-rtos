@@ -15,17 +15,25 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/sensor/eqdc_mcux.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(eqdc_mcux, CONFIG_SENSOR_LOG_LEVEL);
 
+struct eqdc_mcux_inputmux_entry {
+	INPUTMUX_Type *base;
+	uint16_t channel;
+	uint32_t connection;
+};
+
 struct eqdc_mcux_config {
 	EQDC_Type *base;
 	const struct pinctrl_dev_config *pincfg;
-	const uint32_t *input_channels;
-	const uint32_t *inputmux_connections;
-	uint8_t input_channel_count;
+	const struct eqdc_mcux_inputmux_entry *inputmux_entries;
+    uint8_t inputmux_entries_count;
+	const struct device *clock_dev;
+    clock_control_subsys_t clock_subsys;
 	uint8_t filter_count;
 	uint8_t filter_sample_period;
 	bool single_phase_mode;
@@ -141,17 +149,24 @@ static int eqdc_mcux_init(const struct device *dev)
 	struct eqdc_mcux_data *data = dev->data;
 	int err;
 
+	if (!device_is_ready(config->clock_dev)) {
+        LOG_ERR("Clock control device not ready");
+        return -ENODEV;
+    }
+	clock_control_on(config->clock_dev, config->clock_subsys);
+
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0 && err != -ENOENT) {
 		return err;
 	}
 
-	INPUTMUX_Init(INPUTMUX0);
-	for (uint8_t i = 0; i < config->input_channel_count; i++) {
-		INPUTMUX_AttachSignal(INPUTMUX0, config->input_channels[i],
-				      config->inputmux_connections[i]);
+	const struct eqdc_mcux_inputmux_entry *entry = &config->inputmux_entries[i];
+
+	INPUTMUX_Init(entry->base);
+	for (uint8_t i = 0; i < config->inputmux_entries_count; i++) {
+		INPUTMUX_AttachSignal(entry->base, entry->channel, (inputmux_connection_t)entry->connection);
 	}
-	INPUTMUX_Deinit(INPUTMUX0);
+	INPUTMUX_Deinit(entry->base);
 
 	EQDC_GetDefaultConfig(&data->eqdc_config);
 	data->eqdc_config.operateMode = int_to_work_mode(config->single_phase_mode);
@@ -163,49 +178,50 @@ static int eqdc_mcux_init(const struct device *dev)
 
 	return 0;
 }
+#define EQDC_CHECK_COND(n, p, min, max)                     \
+    COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (              \
+            BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),    \
+                 STRINGIFY(p) " value is out of range")), ())
 
-#define EQDC_CHECK_COND(n, p, min, max)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (				\
-		    BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),	\
-				 STRINGIFY(p) " value is out of range")), ())
+#define EQDC_INPUTMUX_ENTRY(node_id, prop, idx)              \
+    {                                                        \
+     .base = (INPUTMUX_Type *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
+     .channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, mux), \
+     .connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, val), \
+    }
 
-#define EQDC_INPUTMUX_INIT(n)							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, input_channels),			\
-		(.input_channels = (const uint32_t[]) DT_INST_PROP(n, input_channels), \
-		 .inputmux_connections = (const uint32_t[]) DT_INST_PROP(n, inputmux_connections), \
-		 .input_channel_count = DT_INST_PROP_LEN(n, input_channels),), ())
+#define EQDC_INPUTMUX_DEFINE(n)                                 \
+    static const struct eqdc_inputmux_entry eqdc_mcux_inputmux_entries_##n[] = { \
+        DT_INST_FOREACH_PROP_ELEM_SEP(n, inputmux_connections, EQDC_INPUTMUX_ENTRY, (,)) \
+    };
 
-#define EQDC_MCUX_INIT(n)							 \
-	EQDC_CHECK_COND(n, filter_count, 0, 7);		 \
-	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, input_channels) &&		 \
-		      DT_INST_NODE_HAS_PROP(n, inputmux_connections)) ||	 \
-			     (!DT_INST_NODE_HAS_PROP(n, input_channels) &&	 \
-			      !DT_INST_NODE_HAS_PROP(n, inputmux_connections)), \
-		     "input-channels and inputmux-connections must be defined together"); \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, input_channels),		 \
-		    (BUILD_ASSERT(DT_INST_PROP_LEN(n, input_channels) ==	 \
-					  DT_INST_PROP_LEN(n, inputmux_connections), \
-				  "input-channels and inputmux-connections must"	\
-				  "have same length");), ()) \
-									 \
-	static struct eqdc_mcux_data eqdc_mcux_##n##_data = {			 \
-		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution), \
-	};									 \
-									 \
-	PINCTRL_DT_INST_DEFINE(n);						 \
-									 \
-	static const struct eqdc_mcux_config eqdc_mcux_##n##_config = {		 \
-		.base = (EQDC_Type *)DT_INST_REG_ADDR(n),			 \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			 \
-		.filter_count = DT_INST_PROP_OR(n, filter_count, 0),		 \
-		.filter_sample_period = DT_INST_PROP_OR(n, filter_sample_period, 0), \
-		.single_phase_mode = DT_INST_PROP(n, single_phase_mode),		 \
-		EQDC_INPUTMUX_INIT(n)						 \
-	};									 \
-									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, eqdc_mcux_init, NULL,			 \
-				     &eqdc_mcux_##n##_data,			 \
-				     &eqdc_mcux_##n##_config, POST_KERNEL,	 \
-				     CONFIG_SENSOR_INIT_PRIORITY, &eqdc_mcux_api);
+#define EQDC_MCUX_INIT(n)                            \
+    EQDC_INPUTMUX_DEFINE(n)                                  \
+    EQDC_CHECK_COND(n, filter_count, 0, 7);      \
+    BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, inputmux_connections), \
+    "inputmux-connections must be defined in the Devicetree"); \
+                                     \
+    static struct eqdc_mcux_data eqdc_mcux_##n##_data = {            \
+        .counts_per_revolution = DT_INST_PROP(n, counts_per_revolution), \
+    };                                   \
+                                     \
+    PINCTRL_DT_INST_DEFINE(n);                       \
+                                     \
+    static const struct eqdc_mcux_config eqdc_mcux_##n##_config = {      \
+        .base = (EQDC_Type *)DT_INST_REG_ADDR(n),            \
+        .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),             \
+        .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),         \     \
+        .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+        .filter_count = DT_INST_PROP_OR(n, filter_count, 0),         \
+        .filter_sample_period = DT_INST_PROP_OR(n, filter_sample_period, 0), \
+        .single_phase_mode = DT_INST_PROP(n, single_phase_mode),         \
+        .inputmux_entries = eqdc_mcux_inputmux_entries_##n,               \
+        .inputmux_entries_count = ARRAY_SIZE(eqdc_mcux_inputmux_entries_##n), \
+    };                                   \
+                                     \
+    SENSOR_DEVICE_DT_INST_DEFINE(n, eqdc_mcux_init, NULL,            \
+                     &eqdc_mcux_##n##_data,          \
+                     &eqdc_mcux_##n##_config, POST_KERNEL,   \
+                     CONFIG_SENSOR_INIT_PRIORITY, &eqdc_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EQDC_MCUX_INIT)
