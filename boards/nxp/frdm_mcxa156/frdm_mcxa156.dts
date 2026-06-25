@@ -222,7 +222,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 
 &eqdc0 {
 	status = "okay";
-	pinctrl-0 = <&pinmux_qdc0>;
+	pinctrl-0 = <&pinmux_eqdc0>;
 	pinctrl-names = "default";
 	inputmux = <&inputmux0>;
 	counts-per-revolution = <1000>; 
@@ -232,7 +232,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 
 &eqdc1 {
 	status = "okay";
-	pinctrl-0 = <&pinmux_qdc1>;
+	pinctrl-0 = <&pinmux_eqdc1>;
 	pinctrl-names = "default";
 	inputmux = <&inputmux0>;
 	counts-per-revolution = <1000>; 

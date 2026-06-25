@@ -96,7 +96,7 @@
 		};
 	};
 
-	pinmux_qdc0: pinmux_qdc0 {
+	pinmux_eqdc0: pinmux_eqdc0 {
 		group0 {
 			pinmux = <TRIG_IN8_P2_20>,
 				 <TRIG_IN5_P2_7>,
@@ -107,7 +107,7 @@
 		};
 	};
 
-	pinmux_qdc1: pinmux_qdc1 {
+	pinmux_eqdc1: pinmux_eqdc1 {
 		group0 {
 			pinmux = <TRIG_IN4_P4_6>, 
 				 <TRIG_IN9_P2_17>,

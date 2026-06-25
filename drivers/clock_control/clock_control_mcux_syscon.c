@@ -933,13 +933,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = 16384U; /* Fix 16.384kHz */
 		break;
 #endif
-
-#if defined(CONFIG_MCUX_EQDC)
-	case MCUX_EQDC_CLK:
-		/* EQDC is clocked from the AHB/bus clock on MCXA */
-		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
-		break;
-#endif
 	}
 
 	return 0;
