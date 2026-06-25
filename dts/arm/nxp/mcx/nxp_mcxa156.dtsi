@@ -399,14 +399,18 @@
 		eqdc0: eqdc@400A7000 {
 			compatible = "nxp,mcux-eqdc";
 			reg = <0x400A7000 0x1000>;
+			clocks = <&syscon MCUX_EQDC0_CLK>;
 			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
 			status = "disabled";
 		};
 
 		eqdc1: eqdc@400A8000 {
 			compatible = "nxp,mcux-eqdc";
 			reg = <0x400A8000 0x1000>;
+			clocks = <&syscon MCUX_EQDC1_CLK>;
 			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
 			status = "disabled";
 		};
 

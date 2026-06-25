@@ -219,7 +219,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-names = "default";
 	inputmux = <&inputmux0>;
 	counts-per-revolution = <1000>; 
-	input-channels = <0 0>;
 	inputmux-connections = <&inputmux0 0 0x37000020>,
 						<&inputmux0 0 0x36C0001D>;
 };
@@ -230,7 +229,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-names = "default";
 	inputmux = <&inputmux0>;
 	counts-per-revolution = <1000>; 
-	input-channels = <0 0>;
 	inputmux-connections = <&inputmux0 0 0x3900001C>,
 						<&inputmux0 0 0x38C00021>;
 };

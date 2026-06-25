@@ -160,13 +160,13 @@ static int eqdc_mcux_init(const struct device *dev)
 		return err;
 	}
 
-	const struct eqdc_mcux_inputmux_entry *entry = &config->inputmux_entries[i];
-
-	INPUTMUX_Init(entry->base);
+	
 	for (uint8_t i = 0; i < config->inputmux_entries_count; i++) {
+		const struct eqdc_mcux_inputmux_entry *entry = &config->inputmux_entries[i];
+		INPUTMUX_Init(entry->base);
 		INPUTMUX_AttachSignal(entry->base, entry->channel, (inputmux_connection_t)entry->connection);
+		INPUTMUX_Deinit(entry->base);
 	}
-	INPUTMUX_Deinit(entry->base);
 
 	EQDC_GetDefaultConfig(&data->eqdc_config);
 	data->eqdc_config.operateMode = int_to_work_mode(config->single_phase_mode);
@@ -178,6 +178,7 @@ static int eqdc_mcux_init(const struct device *dev)
 
 	return 0;
 }
+
 #define EQDC_CHECK_COND(n, p, min, max)                     \
     COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (              \
             BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),    \
@@ -186,20 +187,18 @@ static int eqdc_mcux_init(const struct device *dev)
 #define EQDC_INPUTMUX_ENTRY(node_id, prop, idx)              \
     {                                                        \
      .base = (INPUTMUX_Type *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
-     .channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, mux), \
-     .connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, val), \
+     .channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, channel), \
+     .connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, connection), \
     }
 
 #define EQDC_INPUTMUX_DEFINE(n)                                 \
-    static const struct eqdc_inputmux_entry eqdc_mcux_inputmux_entries_##n[] = { \
+    static const struct eqdc_mcux_inputmux_entry eqdc_mcux_inputmux_entries_##n[] = { \
         DT_INST_FOREACH_PROP_ELEM_SEP(n, inputmux_connections, EQDC_INPUTMUX_ENTRY, (,)) \
     };
 
 #define EQDC_MCUX_INIT(n)                            \
     EQDC_INPUTMUX_DEFINE(n)                                  \
     EQDC_CHECK_COND(n, filter_count, 0, 7);      \
-    BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, inputmux_connections), \
-    "inputmux-connections must be defined in the Devicetree"); \
                                      \
     static struct eqdc_mcux_data eqdc_mcux_##n##_data = {            \
         .counts_per_revolution = DT_INST_PROP(n, counts_per_revolution), \
@@ -210,7 +209,7 @@ static int eqdc_mcux_init(const struct device *dev)
     static const struct eqdc_mcux_config eqdc_mcux_##n##_config = {      \
         .base = (EQDC_Type *)DT_INST_REG_ADDR(n),            \
         .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),             \
-        .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),         \     \
+        .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),         \
         .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
         .filter_count = DT_INST_PROP_OR(n, filter_count, 0),         \
         .filter_sample_period = DT_INST_PROP_OR(n, filter_sample_period, 0), \

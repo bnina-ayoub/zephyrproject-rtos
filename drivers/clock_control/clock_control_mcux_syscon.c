@@ -70,6 +70,19 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_MCUX_EQDC)
+	switch ((uint32_t)sub_system) {
+    case MCUX_EQDC0_CLK:
+        CLOCK_EnableClock(kCLOCK_GateQDC0);
+        return 0;
+    case MCUX_EQDC1_CLK:
+        CLOCK_EnableClock(kCLOCK_GateQDC1);
+        return 0;
+    default:
+        return -EINVAL;
+    }
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -351,6 +364,16 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
+	switch ((uint32_t)sub_system) {
+		case MCUX_EQDC0_CLK:
+			CLOCK_DisableClock(kCLOCK_GateQDC0);
+			return 0;
+		case MCUX_EQDC1_CLK:
+			CLOCK_DisableClock(kCLOCK_GateQDC1);
+			return 0;
+		default:
+			return -EINVAL;
+		}
 	return 0;
 }
 
@@ -557,6 +580,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 	case MCUX_CTIMER7_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(7);
+		break;
+#endif
+#if defined(CONFIG_EQDC_MCUX)
+	case MCUX_EQDC0_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_GateQDC0);
+    	break;
+	case MCUX_EQDC1_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_GateQDC1);
 		break;
 #endif
 #if defined(CONFIG_COUNTER_NXP_MRT) || defined(CONFIG_SOC_SERIES_RW6XX) \
