@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &eqdc0;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio3 14 GPIO_ACTIVE_LOW>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio3 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&eqdc0 {
+	status = "okay";
+	counts-per-revolution = <120>;
+};

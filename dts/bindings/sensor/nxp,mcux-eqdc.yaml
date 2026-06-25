@@ -1,11 +1,11 @@
-# Copyright (c) 2024
+# SPDX-FileCopyrightText: 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP MCUX Enhanced Quadrature Decoder (EQDC)
 
 compatible: "nxp,mcux-eqdc"
 
-include: [pinctrl-device.yaml, sensor-device.yaml]
+include: [sensor-device.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -18,42 +18,75 @@ properties:
     type: int
     required: true
     description: |
-      This is a number that is used to determine how many revolutions
-      were done based on the current counter's value.
-
+      Number of encoder counts per full revolution (360 degrees).
+      This is used to convert position to angle. The value is multiplied
+      by 4 internally for Quadrature X4 decoding, so the effective modulus
+      is (counts-per-revolution * 4 - 1).
+    
   inputmux:
     type: phandle
     description: |
       Phandle to the INPUTMUX node used to route signals to this QDC instance.
 
-  single-phase-mode:
+  input-filter-period:
+    type: int
+    default: 0
+    description: |
+      The Input Filter Sample Period represents the sampling period
+      (in IPBus clock cycles) of the decoder input signals. Each input
+      is sampled multiple times at the rate specified by the Input Filter
+      Sample Period.
+      - If it is set to 0x0(default), then the input filter is bypassed.
+      The value of the Input Filter Sample Period (FILT_PER) affects the
+      input latency.
+
+  prescaler:
+    type: int
+    default: 0
+    description: |
+      The Prescaler field is used to prescale the peripheral clock that
+      is used by the LASTEDGE and POSDPER counters as well as watchdog timer
+      and Input Filter.
+      The clock is prescaled by a value of 2^PRSC. For example:
+      prescaler = 0, divide by 1
+      prescaler = 1, divide by 2
+      ...
+      prescaler = 15, divide by 32768
+
+  reverse-direction:
     type: boolean
     description: |
-      Bypass the quadrature decoder. A positive transition of the PHASEA input
-      generates a count signal. The PHASEB input and the REV bit control the
-      counter direction.
+      Selects the direction of the count and position counter initial value.
+      false: Count normally.
+      true: Count in the reverse direction.
 
-  filter-count:
+  revolution-count-mode:
     type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 1
     description: |
-      The number of consecutive samples that must agree prior to the input
-      filter accepting an input transition. A value of 0 represents 3
-      samples. A value of 7 represents 10 samples.
+      0: Use INDEX pulse to increment/decrement revolution counter.
+      1: Use modulus counting roll-over or roll-under events instead of the
+      INDEX pulse.
 
-  filter-sample-period:
-    type: int
-    description: |
-      The sampling period (in IPBus clock cycles) of the decoder input signals.
-      If FILT_PER is 0 (default), then the input filter is bypassed.
-
-  input-channels:
-    type: array
-    description: InputMUX channels for Phase A and Phase B
-
+  single-phase-mode:
+      type: boolean
+      description: |
+        Bypass the quadrature decoder. A positive transition of the PHASEA input
+        generates a count signal. The PHASEB input and the REV bit control the
+        counter direction.
+      
   inputmux-connections:
     type: phandle-array
     specifier-space: inputmux
     description: |
-      Array of inputmux connections routing the trigger inputs to the QDC.
-      Format is: <&inputmux_node channel routing_hex_value>
+      INPUTMUX routing for the EQDC PHASEA/PHASEB inputs. Each phandle-array
+      entry is <&inputmuxN channel connection> where:
+        - &inputmuxN is the INPUTMUX node providing the route
+        - channel is the INPUTMUX destination index
+        - connection is an inputmux_connection_t value from the NXP HAL
+          header fsl_inputmux_connections.h
+
+      Example (MCXA153: route TRIG_IN10 to EQDC PHASEA and TRIG_IN5 to
+      EQDC PHASEB via INPUTMUX0):
+        inputmux-connections = <&inputmux0 0 0x37000022>, /* TrigIn10ToQdc0Phasea */
+                               <&inputmux0 0 0x36c0001d>; /* TrigIn5ToQdc0Phaseb */

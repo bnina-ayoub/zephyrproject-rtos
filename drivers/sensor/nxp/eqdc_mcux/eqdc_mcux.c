@@ -57,7 +57,8 @@ static int eqdc_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	const struct eqdc_mcux_config *config = dev->config;
 	struct eqdc_mcux_data *data = dev->data;
 
-	if (ch != SENSOR_CHAN_ROTATION) {
+	if (ch != SENSOR_CHAN_ALL && ch != SENSOR_CHAN_ROTATION &&
+		ch != SENSOR_CHAN_ENCODER_COUNT) {
 		return -ENOTSUP;
 	}
 
@@ -86,7 +87,8 @@ static int eqdc_mcux_attr_get(const struct device *dev, enum sensor_channel ch,
 {
 	struct eqdc_mcux_data *data = dev->data;
 
-	if (ch != SENSOR_CHAN_ROTATION) {
+	if (ch != SENSOR_CHAN_ALL && ch != SENSOR_CHAN_ROTATION &&
+		ch != SENSOR_CHAN_ENCODER_COUNT) {
 		return -ENOTSUP;
 	}
 
@@ -110,7 +112,8 @@ static int eqdc_mcux_fetch(const struct device *dev, enum sensor_channel ch)
 	const struct eqdc_mcux_config *config = dev->config;
 	struct eqdc_mcux_data *data = dev->data;
 
-	if (ch != SENSOR_CHAN_ALL) {
+	if (ch != SENSOR_CHAN_ALL && ch != SENSOR_CHAN_ROTATION &&
+		ch != SENSOR_CHAN_ENCODER_COUNT) {
 		return -ENOTSUP;
 	}
 
@@ -126,7 +129,8 @@ static int eqdc_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 {
 	struct eqdc_mcux_data *data = dev->data;
 
-	if (ch != SENSOR_CHAN_ROTATION) {
+	if (ch != SENSOR_CHAN_ALL && ch != SENSOR_CHAN_ROTATION &&
+		ch != SENSOR_CHAN_ENCODER_COUNT) {
 		return -ENOTSUP;
 	}
 
