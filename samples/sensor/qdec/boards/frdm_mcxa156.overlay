@@ -24,45 +24,11 @@
 	};
 };
 
-/*  J1-11 --->  J4-5 (EQDC PHASEA)
- *  J1-7 --->  J4-3 (EQDC PHASEB)
- */
-&pinctrl {
-	eqdc_pinmux: eqdc_pinmux {
-		group0 {
-			pinmux = <TRIG_IN10_P3_31>;
-			drive-strength = "high";
-			slew-rate = "fast";
-			input-enable;
-		};
-
-		group1 {
-			pinmux = <TRIG_IN9_P2_17>;
-			drive-strength = "high";
-			slew-rate = "fast";
-			input-enable;
-		};
-	};
-};
-
 &inputmux0 {
 	status = "okay";
 };
 
 &eqdc0 {
 	status = "okay";
-	pinctrl-0 = <&eqdc_pinmux>;
-	pinctrl-names = "default";
 	counts-per-revolution = <120>;
-	revolution-count-mode = <1>;
-	prescaler = <15>;
-	input-filter-period = <1>;
-	/* Route TRIG_IN10 (P3_31) to EQDC PHASEA and TRIG_IN9 (P2_17) to
-	 * EQDC PHASEB through INPUTMUX0. Connection values are
-	 * inputmux_connection_t enums from fsl_inputmux_connections.h:
-	 *   kINPUTMUX_TrigIn10ToQdc0Phasea = 0x37000022
-	 *   kINPUTMUX_TrigIn9ToQdc0Phaseb  = 0x36c00021
-	 */
-	inputmux-connections = <&inputmux0 0 0x37000022>,
-			       <&inputmux0 0 0x36c00021>;
 };

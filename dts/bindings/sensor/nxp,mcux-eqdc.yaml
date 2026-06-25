@@ -17,25 +17,16 @@ properties:
   counts-per-revolution:
     type: int
     required: true
-    min: 1
     description: |
       Number of encoder counts per full revolution (360 degrees).
       This is used to convert position to angle. The value is multiplied
       by 4 internally for Quadrature X4 decoding, so the effective modulus
       is (counts-per-revolution * 4 - 1).
-
-  input-filter-count:
-    type: int
-    default: 0
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    
+  inputmux:
+    type: phandle
     description: |
-      Input filter sample count
-      The Input Filter Sample Count represents the number of consecutive samples
-      that must agree, before the input filter accepts an input transition:
-      - A value of 0x0 represents 3 samples
-      - A value of 0x7 represents 10 samples
-      The value of the Input Filter Sample Count (FILT_CNT) affects the
-      input latency.
+      Phandle to the INPUTMUX node used to route signals to this QDC instance.
 
   input-filter-period:
     type: int
@@ -52,8 +43,6 @@ properties:
   prescaler:
     type: int
     default: 0
-    min: 0
-    max: 15
     description: |
       The Prescaler field is used to prescale the peripheral clock that
       is used by the LASTEDGE and POSDPER counters as well as watchdog timer
@@ -79,6 +68,13 @@ properties:
       1: Use modulus counting roll-over or roll-under events instead of the
       INDEX pulse.
 
+  single-phase-mode:
+      type: boolean
+      description: |
+        Bypass the quadrature decoder. A positive transition of the PHASEA input
+        generates a count signal. The PHASEB input and the REV bit control the
+        counter direction.
+      
   inputmux-connections:
     type: phandle-array
     specifier-space: inputmux

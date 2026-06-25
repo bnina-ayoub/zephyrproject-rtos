@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -93,6 +93,28 @@
 				 <PWM0_B0_P3_7>;
 			slew-rate = "fast";
 			drive-strength = "low";
+		};
+	};
+
+	pinmux_qdc0: pinmux_qdc0 {
+		group0 {
+			pinmux = <TRIG_IN8_P2_20>,
+				 <TRIG_IN5_P2_7>,
+				 <TRIG_IN2_P1_6>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_qdc1: pinmux_qdc1 {
+		group0 {
+			pinmux = <TRIG_IN4_P4_6>, 
+				 <TRIG_IN9_P2_17>,
+				 <TRIG_IN10_P3_31>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
 		};
 	};
 

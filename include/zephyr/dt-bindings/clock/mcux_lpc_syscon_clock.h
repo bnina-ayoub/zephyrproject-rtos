@@ -188,6 +188,9 @@
 
 /** ACMP0 peripheral clock identifier. */
 #define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x30, 0x00)
+/** EQDC peripheral clock identifiers. */
+#define MCUX_EQDC0_CLK MCUX_LPC_CLK_ID(0x31, 0x00)
+#define MCUX_EQDC1_CLK MCUX_LPC_CLK_ID(0x31, 0x01)
 
 /** LCDIF peripheral clock identifier. */
 #define MCUX_LCDIF_CLK MCUX_LPC_CLK_ID(0x31, 0x00)
